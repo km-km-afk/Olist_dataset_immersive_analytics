@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brazil E-commerce WebXR Analytics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; overflow: hidden; background: #000; }
+        
+        #container { width: 100vw; height: 100vh; }
+        
+        #info-panel {
+            position: absolute;
+            top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 320px;
+            z-index: 100;
+            border: 1px solid #333;
+        }
+        
+        #info-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 8px;
+        }
+        
+        #info-panel h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #00ff88;
+        }
+        
+        #info-panel p { margin: 4px 0; font-size: 12px; }
+        
+        .feature-section { margin-bottom: 15px; }
+        
+        .highlight-box {
+            background: rgba(0, 255, 136, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 12px;
+        }
+
+        .causal-legend {
+            background: rgba(255, 50, 50, 0.1);
+            border-left: 3px solid #ff3333;
+        }
+        
+        .highlight-box p { font-size: 11px; font-style: italic; }
+        
+        /* CONTROLS CONTAINER */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        button {
+            padding: 12px 14px;
+            font-size: 12px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            background: #333; 
+            border: 1px solid #555;
+            white-space: nowrap;
+        }
+
+        button:hover { background: #444; }
+
+        /* Specific Button Styles */
+        #vr-button { background: #1a73e8; border: none; }
+        #vr-button:hover { background: #1557b0; }
+
+        #causal-button.active { 
+            background: #ff3333; 
+            border-color: #ff0000; 
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); 
+        }
+
+        #correlation-button.active { 
+            background: #00cccc; 
+            color: #000;
+            border-color: #00ffff; 
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4); 
+        }
+
+        #sentiment-button.active { 
+            background: #cc00cc; 
+            border-color: #ff00ff; 
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); 
+        }
+
+        #retention-button.active { 
+            background: #ffd700; 
+            color: #000;
+            border-color: #ffff00; 
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); 
+        }
+        
+        .footer-note { margin: 15px 0 0 0; font-size: 11px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="info-panel">
+        <h2>Brazil Logistics Analytics</h2>
+        
+        <div class="feature-section">
+            <h3>Visual Encodings:</h3>
+            <p>🏔️ <strong>Bar Height</strong> = Delivery Delay</p>
+            <p>🎨 <strong>Bar Color</strong> = Cancel Rate</p>
+            <p>📦 <strong>Bar Size</strong> = Order Volume</p>
+        </div>
+
+        <div class="feature-section">
+            <h3 style="color: #ffd700;">Customer Retention:</h3>
+            <p>💎 <strong>Orbiting Gems</strong> = Return Rate</p>
+            <p>🥇 Gold (3) > 80% | 🥈 Silver (2) > 50%</p>
+        </div>
+
+        <div class="feature-section">
+            <h3 style="color: #ff3333;">Causal Inference:</h3>
+            <p>🔴 <strong>Red Flow</strong> = Causes Delay</p>
+        </div>
+        
+        <div class="feature-section">
+             <h3 style="color: #cc00cc;">Sentiment (NLP):</h3>
+             <p>😍 = Happy | 🤬 = Angry</p>
+        </div>
+        
+        <p class="footer-note">Drag to rotate • Click bars for details</p>
+    </div>
+    
+    <div class="controls">
+        <button id="correlation-button">🔗 Links</button>
+        <button id="causal-button">👁️ Causal</button>
+        <button id="sentiment-button">💬 Sentiment</button>
+        <button id="retention-button">💎 Retention</button>
+        <button id="vr-button">ENTER VR</button>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Regional data with Retention Rate (0.0 - 1.0)
+        const data = [
+            { region: "AC", avg_delay_days: -20.47, avg_delay_norm: 2.45, late_orders_pct: 0.037, cancel_rate: 0.0, total_orders: 81, lat: -9.0, lon: -70.0, sentiment: -0.8, retention: 0.2 },
+            { region: "AL", avg_delay_days: -8.37, avg_delay_norm: 1.0, late_orders_pct: 0.206, cancel_rate: 0.002, total_orders: 413, lat: -9.5, lon: -36.6, sentiment: 0.2, retention: 0.6 },
+            { region: "AM", avg_delay_days: -19.17, avg_delay_norm: 2.29, late_orders_pct: 0.027, cancel_rate: 0.0, total_orders: 148, lat: -3.1, lon: -60.0, sentiment: -0.7, retention: 0.3 },
+            { region: "AP", avg_delay_days: -19.40, avg_delay_norm: 2.32, late_orders_pct: 0.029, cancel_rate: 0.0, total_orders: 68, lat: 1.4, lon: -51.8, sentiment: -0.6, retention: 0.25 },
+            { region: "BA", avg_delay_days: -10.40, avg_delay_norm: 1.24, late_orders_pct: 0.117, cancel_rate: 0.005, total_orders: 3380, lat: -12.5, lon: -41.7, sentiment: -0.1, retention: 0.55 },
+            { region: "CE", avg_delay_days: -10.34, avg_delay_norm: 1.24, late_orders_pct: 0.132, cancel_rate: 0.005, total_orders: 1336, lat: -5.5, lon: -39.3, sentiment: 0.1, retention: 0.62 },
+            { region: "DF", avg_delay_days: -11.71, avg_delay_norm: 1.40, late_orders_pct: 0.055, cancel_rate: 0.003, total_orders: 2140, lat: -15.8, lon: -47.9, sentiment: 0.6, retention: 0.78 },
+            { region: "ES", avg_delay_days: -10.30, avg_delay_norm: 1.23, late_orders_pct: 0.105, cancel_rate: 0.004, total_orders: 2033, lat: -19.2, lon: -40.3, sentiment: 0.3, retention: 0.7 },
+            { region: "GO", avg_delay_days: -11.81, avg_delay_norm: 1.41, late_orders_pct: 0.063, cancel_rate: 0.006, total_orders: 2020, lat: -15.8, lon: -49.3, sentiment: 0.4, retention: 0.72 },
+            { region: "MA", avg_delay_days: -9.19, avg_delay_norm: 1.10, late_orders_pct: 0.167, cancel_rate: 0.005, total_orders: 747, lat: -4.9, lon: -45.3, sentiment: -0.2, retention: 0.45 },
+            { region: "MG", avg_delay_days: -12.92, avg_delay_norm: 1.54, late_orders_pct: 0.045, cancel_rate: 0.006, total_orders: 11635, lat: -18.5, lon: -44.4, sentiment: 0.5, retention: 0.82 },
+            { region: "MS", avg_delay_days: -10.84, avg_delay_norm: 1.29, late_orders_pct: 0.095, cancel_rate: 0.003, total_orders: 715, lat: -20.4, lon: -54.6, sentiment: 0.3, retention: 0.68 },
+            { region: "MT", avg_delay_days: -14.03, avg_delay_norm: 1.68, late_orders_pct: 0.058, cancel_rate: 0.002, total_orders: 907, lat: -12.6, lon: -56.1, sentiment: 0.1, retention: 0.6 },
+            { region: "PA", avg_delay_days: -13.65, avg_delay_norm: 1.63, late_orders_pct: 0.109, cancel_rate: 0.004, total_orders: 975, lat: -1.9, lon: -54.9, sentiment: -0.3, retention: 0.4 },
+            { region: "PB", avg_delay_days: -12.79, avg_delay_norm: 1.53, late_orders_pct: 0.101, cancel_rate: 0.004, total_orders: 536, lat: -7.2, lon: -36.7, sentiment: 0.0, retention: 0.58 },
+            { region: "PE", avg_delay_days: -12.82, avg_delay_norm: 1.53, late_orders_pct: 0.093, cancel_rate: 0.003, total_orders: 1652, lat: -8.3, lon: -37.9, sentiment: 0.1, retention: 0.65 },
+            { region: "PI", avg_delay_days: -10.87, avg_delay_norm: 1.30, late_orders_pct: 0.133, cancel_rate: 0.008, total_orders: 495, lat: -7.7, lon: -42.7, sentiment: -0.1, retention: 0.5 },
+            { region: "PR", avg_delay_days: -12.99, avg_delay_norm: 1.55, late_orders_pct: 0.039, cancel_rate: 0.004, total_orders: 5045, lat: -24.0, lon: -51.2, sentiment: 0.7, retention: 0.88 },
+            { region: "RJ", avg_delay_days: -11.31, avg_delay_norm: 1.35, late_orders_pct: 0.116, cancel_rate: 0.007, total_orders: 12852, lat: -22.3, lon: -42.5, sentiment: 0.4, retention: 0.79 },
+            { region: "RN", avg_delay_days: -13.34, avg_delay_norm: 1.59, late_orders_pct: 0.091, cancel_rate: 0.0, total_orders: 485, lat: -5.8, lon: -36.5, sentiment: 0.0, retention: 0.52 },
+            { region: "RO", avg_delay_days: -19.31, avg_delay_norm: 2.31, late_orders_pct: 0.028, cancel_rate: 0.012, total_orders: 253, lat: -10.9, lon: -62.8, sentiment: -0.5, retention: 0.35 },
+            { region: "RR", avg_delay_days: -15.41, avg_delay_norm: 1.84, late_orders_pct: 0.109, cancel_rate: 0.022, total_orders: 46, lat: 2.8, lon: -60.7, sentiment: -0.4, retention: 0.3 },
+            { region: "RS", avg_delay_days: -13.60, avg_delay_norm: 1.62, late_orders_pct: 0.059, cancel_rate: 0.005, total_orders: 5466, lat: -30.0, lon: -51.2, sentiment: 0.6, retention: 0.85 },
+            { region: "SC", avg_delay_days: -11.22, avg_delay_norm: 1.34, late_orders_pct: 0.080, cancel_rate: 0.005, total_orders: 3637, lat: -27.2, lon: -50.2, sentiment: 0.7, retention: 0.86 },
+            { region: "SE", avg_delay_days: -9.59, avg_delay_norm: 1.15, late_orders_pct: 0.146, cancel_rate: 0.003, total_orders: 350, lat: -10.6, lon: -37.4, sentiment: 0.2, retention: 0.6 },
+            { region: "SP", avg_delay_days: -10.74, avg_delay_norm: 1.28, late_orders_pct: 0.044, cancel_rate: 0.008, total_orders: 41746, lat: -23.5, lon: -46.6, sentiment: 0.8, retention: 0.92 },
+            { region: "TO", avg_delay_days: -11.87, avg_delay_norm: 1.42, late_orders_pct: 0.096, cancel_rate: 0.004, total_orders: 280, lat: -10.2, lon: -48.3, sentiment: 0.1, retention: 0.55 }
+        ];
+
+        // Border coordinates
+        const brazilBorder = [
+            [-60.6758, 5.2721], [-59.9, 5.2], [-51.0694, 4.5], [-50.5, 2.5], [-50.0, 1.7],
+            [-49.5, 1.2], [-44.5, -0.2], [-41.8, -2.9], [-38.5, -3.7], [-35.5, -5.5],
+            [-34.8, -7.0], [-34.8, -8.5], [-35.0, -9.5], [-36.5, -10.5], [-37.5, -11.0],
+            [-38.5, -12.5], [-39.0, -14.5], [-39.0, -17.0], [-39.8, -19.6], [-40.5, -20.3],
+            [-41.0, -21.0], [-42.0, -22.0], [-43.2, -22.9], [-44.5, -23.3], [-45.8, -23.5],
+            [-48.0, -24.0], [-48.5, -25.5], [-48.6, -26.5], [-48.7, -27.5], [-49.5, -29.0],
+            [-50.0, -30.0], [-52.0, -32.0], [-53.4, -33.7], [-53.6, -33.75], [-53.4, -32.5],
+            [-54.0, -31.5], [-55.0, -30.9], [-56.0, -30.1], [-57.6, -30.2], [-58.2, -27.4],
+            [-58.2, -24.0], [-57.8, -22.1], [-57.6, -20.0], [-57.9, -19.0], [-58.2, -17.5],
+            [-58.0, -16.0], [-57.7, -15.0], [-60.0, -13.5], [-61.0, -12.5], [-62.8, -11.0],
+            [-64.8, -10.5], [-65.4, -9.7], [-67.3, -9.7], [-69.0, -9.5], [-70.1, -9.4],
+            [-72.0, -9.4], [-73.0, -9.3], [-73.9, -8.5], [-73.9, -7.3], [-73.7, -6.0],
+            [-73.1, -4.9], [-72.9, -3.3], [-72.0, -2.4], [-70.8, -1.2], [-70.0, -0.1],
+            [-69.9, 0.9], [-69.3, 0.9], [-68.0, 1.7], [-66.8, 1.2], [-65.5, 1.1],
+            [-64.0, 1.6], [-63.4, 2.0], [-61.4, 2.7], [-60.6758, 5.2721]
+        ];
+
+        // 1. CAUSAL DATA: Define relationships
+        const causalFindings = [
+            { source: "SP", target: "AM", effect: "distance", strength: 0.9, val: "+8.4d", type: "bad" },
+            { source: "SP", target: "RR", effect: "distance", strength: 0.95, val: "+9.1d", type: "bad" },
+            { source: "SP", target: "MG", effect: "hub", strength: 0.7, val: "-1.5d", type: "good" },
+            { source: "RJ", target: "ES", effect: "hub", strength: 0.5, val: "-0.8d", type: "good" },
+            { source: "DF", target: "GO", effect: "hub", strength: 0.6, val: "-1.1d", type: "good" }
+        ];
+
+        // Groups
+        const causalGroup = new THREE.Group(); causalGroup.visible = false; 
+        const correlationGroup = new THREE.Group(); correlationGroup.visible = false;
+        const sentimentGroup = new THREE.Group(); sentimentGroup.visible = false;
+        const retentionGroup = new THREE.Group(); retentionGroup.visible = false;
+
+        const flowParticles = []; 
+
+        // Three.js setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a0a);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 12);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true;
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 5);
+        scene.add(directionalLight);
+
+        // Calculate bounds
+        const allLats = brazilBorder.map(p => p[1]);
+        const allLons = brazilBorder.map(p => p[0]);
+        const latRange = { min: Math.min(...allLats), max: Math.max(...allLats) };
+        const lonRange = { min: Math.min(...allLons), max: Math.max(...allLons) };
+        
+        const normalize = (value, min, max, newMin, newMax) => {
+            return ((value - min) / (max - min)) * (newMax - newMin) + newMin;
+        };
+
+        // Create Brazil map floor
+        const floorGeometry = new THREE.PlaneGeometry(26, 26);
+        const canvas = document.createElement('canvas');
+        canvas.width = 2048; canvas.height = 2048;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#0d0d0d';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const latToY = (lat) => normalize(lat, latRange.min, latRange.max, canvas.height - 100, 100);
+        const lonToX = (lon) => normalize(lon, lonRange.min, lonRange.max, 100, canvas.width - 100);
+        
+        // Draw Brazil outline
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 6;
+        ctx.fillStyle = '#0a3d2a';
+        ctx.beginPath();
+        brazilBorder.forEach((point, i) => {
+            const x = lonToX(point[0]);
+            const y = latToY(point[1]);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Add state labels
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'Bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        data.forEach(region => {
+            const x = lonToX(region.lon);
+            const y = latToY(region.lat);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(x - 35, y - 20, 70, 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(region.region, x, y);
+        });
+        
+        // Grid
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 128) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+        
+        const floorMaterial = new THREE.MeshPhongMaterial({ map: new THREE.CanvasTexture(canvas), side: THREE.DoubleSide });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        // Create visualization objects
+        const bars = [];
+        const rings = [];
+        const particles = [];
+        const maxOrders = Math.max(...data.map(d => d.total_orders));
+        const regionMap = {}; // Initialize map for causal links
+
+        data.forEach((region, idx) => {
+            const x = normalize(region.lon, lonRange.min, lonRange.max, -11, 11);
+            const z = -normalize(region.lat, latRange.min, latRange.max, -11, 11);
+            
+            const height = Math.max(0.2, region.avg_delay_norm * 1.5);
+            
+            // Store data for Causal Links
+            regionMap[region.region] = { x, y: height, z };
+
+            const cancelColor = new THREE.Color();
+            cancelColor.setHSL(0.33 - (region.cancel_rate * 15), 0.8, 0.5);
+            const size = 0.3 + (region.total_orders / maxOrders) * 1.5;
+            
+            // Main bar
+            const geometry = new THREE.BoxGeometry(size, height, size);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: cancelColor, emissive: cancelColor, emissiveIntensity: 0.2, transparent: true, opacity: 0.9 
+            });
+            const bar = new THREE.Mesh(geometry, material);
+            bar.position.set(x, height / 2, z);
+            bar.userData = { region, index: idx, size: size };
+            scene.add(bar);
+            bars.push(bar);
+
+            // Pulsing ring
+            const ring = new THREE.Mesh(
+                new THREE.RingGeometry(size * 0.8, size * 1.2, 32),
+                new THREE.MeshBasicMaterial({ color: 0xff3333, transparent: true, opacity: region.late_orders_pct * 2, side: THREE.DoubleSide })
+            );
+            ring.position.set(x, 0.05, z);
+            ring.rotation.x = -Math.PI / 2;
+            ring.userData = { baseOpacity: region.late_orders_pct * 2 };
+            scene.add(ring);
+            rings.push(ring);
+
+            // Particles
+            const particleCount = Math.floor((region.total_orders / maxOrders) * 50);
+            const pGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = x + (Math.random() - 0.5) * size;
+                positions[i * 3 + 1] = height + Math.random() * 2;
+                positions[i * 3 + 2] = z + (Math.random() - 0.5) * size;
+            }
+            
+            pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const pSys = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.6 }));
+            pSys.userData = { baseY: height };
+            scene.add(pSys);
+            particles.push(pSys);
+
+            // Label sprite
+            const labelCanvas = document.createElement('canvas');
+            const labelCtx = labelCanvas.getContext('2d');
+            labelCanvas.width = 256; labelCanvas.height = 128;
+            labelCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            labelCtx.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+            labelCtx.font = 'Bold 48px Arial';
+            labelCtx.fillStyle = 'white';
+            labelCtx.textAlign = 'center';
+            labelCtx.fillText(region.region, 128, 80);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(labelCanvas) }));
+            sprite.position.set(x, height + 0.5, z);
+            sprite.scale.set(1, 0.5, 1);
+            scene.add(sprite);
+        });
+
+        // 1. CORRELATION LINES
+        scene.add(correlationGroup);
+        data.forEach((region1, i) => {
+            data.forEach((region2, j) => {
+                if (i >= j) return;
+                
+                const delayDiff = Math.abs(region1.avg_delay_norm - region2.avg_delay_norm);
+                const cancelDiff = Math.abs(region1.cancel_rate - region2.cancel_rate);
+                const lateDiff = Math.abs(region1.late_orders_pct - region2.late_orders_pct);
+                const similarity = Math.sqrt(delayDiff**2 + cancelDiff**2 * 100 + lateDiff**2);
+                
+                if (similarity < 0.5) {
+                    const x1 = normalize(region1.lon, lonRange.min, lonRange.max, -11, 11);
+                    const z1 = -normalize(region1.lat, latRange.min, latRange.max, -11, 11);
+                    const y1 = region1.avg_delay_norm * 1.5 / 2;
+                    
+                    const x2 = normalize(region2.lon, lonRange.min, lonRange.max, -11, 11);
+                    const z2 = -normalize(region2.lat, latRange.min, latRange.max, -11, 11);
+                    const y2 = region2.avg_delay_norm * 1.5 / 2;
+                    
+                    const points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
+                    
+                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const lineMaterial = new THREE.LineBasicMaterial({ 
+                        color: 0x00ffff, 
+                        transparent: true, 
+                        opacity: (0.5 - similarity) * 2 
+                    });
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    correlationGroup.add(line);
+                }
+            });
+        });
+
+        // 2. CAUSAL CURVES BUILDER
+        function createCausalLinks(scene, regionMap) {
+            scene.add(causalGroup);
+            causalFindings.forEach(link => {
+                const start = regionMap[link.source];
+                const end = regionMap[link.target];
+                if (!start || !end) return;
+
+                const p1 = new THREE.Vector3(start.x, start.y, start.z);
+                const p2 = new THREE.Vector3(end.x, end.y, end.z);
+                const distance = p1.distanceTo(p2);
+                const arcHeight = 4 + (distance / 2);
+                const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+                mid.y += arcHeight;
+                
+                const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+                
+                const points = curve.getPoints(50);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const linkColor = link.type === 'bad' ? 0xff3333 : 0x00ffff;
+                const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: linkColor, transparent: true, opacity: 0.15 }));
+                causalGroup.add(line);
+
+                const flowCount = Math.floor(distance * 3);
+                const flowGeo = new THREE.BufferGeometry();
+                const flowPos = new Float32Array(flowCount * 3);
+                const flowOffsets = []; 
+
+                for(let i=0; i<flowCount; i++) {
+                    flowOffsets.push(Math.random());
+                    flowPos[i*3] = 0; flowPos[i*3+1] = 0; flowPos[i*3+2] = 0;
+                }
+                flowGeo.setAttribute('position', new THREE.BufferAttribute(flowPos, 3));
+                const flowSys = new THREE.Points(flowGeo, new THREE.PointsMaterial({ color: linkColor, size: 0.25, transparent: true, opacity: 0.9 }));
+                flowSys.userData = { curve: curve, offsets: flowOffsets, speed: 0.005 + (link.strength * 0.005) };
+                causalGroup.add(flowSys);
+                flowParticles.push(flowSys);
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 128; canvas.height = 64;
+                ctx.fillStyle = link.type === 'bad' ? 'rgba(100, 0, 0, 0.9)' : 'rgba(0, 100, 100, 0.9)';
+                ctx.strokeStyle = link.type === 'bad' ? '#ff5555' : '#55ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.roundRect(5, 5, 118, 54, 25); ctx.fill(); ctx.stroke();
+                ctx.font = 'Bold 28px Arial'; ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(link.val, 64, 32);
+
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+                const labelPos = curve.getPoint(0.75);
+                sprite.position.copy(labelPos);
+                sprite.scale.set(1.5, 0.75, 1);
+                causalGroup.add(sprite);
+            });
+        }
+        createCausalLinks(scene, regionMap);
+
+        // 3. SENTIMENT EMOJIS
+        function createSentimentEmojis(scene, regionMap) {
+            scene.add(sentimentGroup);
+
+            data.forEach(region => {
+                const mapPos = regionMap[region.region];
+                if(!mapPos) return;
+
+                let emoji = "😐";
+                if (region.sentiment >= 0.2) emoji = "😍";
+                else if (region.sentiment <= -0.2) emoji = "🤬";
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = "rgba(0,0,0,0.6)";
+                ctx.beginPath(); ctx.arc(128, 128, 100, 0, Math.PI*2); ctx.fill();
+                ctx.font = "160px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(emoji, 128, 138);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
+
+                const startY = mapPos.y + 1.2;
+                sprite.position.set(mapPos.x, startY, mapPos.z);
+                sprite.scale.set(1.2, 1.2, 1);
+                sprite.userData = { yPos: startY, offset: Math.random() * Math.PI };
+                sentimentGroup.add(sprite);
+            });
+        }
+        createSentimentEmojis(scene, regionMap);
+
+        // 4. RETENTION ORBITALS (NEW)
+        function createRetentionOrbitals(scene, regionMap) {
+            scene.add(retentionGroup);
+
+            // Shared Geometries & Materials for efficiency
+            const geo = new THREE.OctahedronGeometry(0.12); // Diamond shape
+            const matGold = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2, emissive: 0x443300 });
+            const matSilver = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8, roughness: 0.2, emissive: 0x222222 });
+            const matBronze = new THREE.MeshStandardMaterial({ color: 0xcd7f32, metalness: 0.6, roughness: 0.4, emissive: 0x221100 });
+
+            data.forEach(region => {
+                const mapPos = regionMap[region.region];
+                const barSize = bars.find(b => b.userData.region.region === region.region).userData.size;
+                const rate = region.retention;
+
+                let count = 1; 
+                let mat = matBronze;
+                
+                if (rate > 0.8) { count = 3; mat = matGold; }
+                else if (rate > 0.5) { count = 2; mat = matSilver; }
+
+                // Radius of orbit
+                const radius = (barSize / 2) + 0.35;
+
+                for(let i=0; i<count; i++) {
+                    const gem = new THREE.Mesh(geo, mat);
+                    gem.position.set(mapPos.x + radius, mapPos.y / 2, mapPos.z);
+                    
+                    // Orbit metadata
+                    gem.userData = { 
+                        center: {x: mapPos.x, z: mapPos.z},
+                        radius: radius,
+                        angle: (i / count) * Math.PI * 2,
+                        speed: 0.02 + (rate * 0.03), // Higher retention = faster spin
+                        y: (mapPos.y / 2) + (i * 0.1) // Stagger height slightly
+                    };
+                    retentionGroup.add(gem);
+                }
+            });
+        }
+        createRetentionOrbitals(scene, regionMap);
+
+        // --- BUTTON HANDLERS ---
+        
+        let isCausalMode = false;
+        document.getElementById('causal-button').addEventListener('click', (e) => {
+            isCausalMode = !isCausalMode;
+            causalGroup.visible = isCausalMode;
+            e.target.classList.toggle('active');
+            const info = document.getElementById('causal-info');
+            info.style.display = isCausalMode ? 'block' : 'none';
+        });
+
+        let isCorrelationMode = false;
+        document.getElementById('correlation-button').addEventListener('click', (e) => {
+            isCorrelationMode = !isCorrelationMode;
+            correlationGroup.visible = isCorrelationMode;
+            e.target.classList.toggle('active');
+        });
+
+        let isSentimentMode = false;
+        document.getElementById('sentiment-button').addEventListener('click', (e) => {
+            isSentimentMode = !isSentimentMode;
+            sentimentGroup.visible = isSentimentMode;
+            e.target.classList.toggle('active');
+        });
+
+        let isRetentionMode = false;
+        document.getElementById('retention-button').addEventListener('click', (e) => {
+            isRetentionMode = !isRetentionMode;
+            retentionGroup.visible = isRetentionMode;
+            e.target.classList.toggle('active');
+        });
+
+        // Mouse controls
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraRotation = { x: 0.4, y: 0 };
+        const cameraDistance = 18;
+
+        const updateCamera = () => {
+            camera.position.x = Math.sin(cameraRotation.y) * cameraDistance * Math.cos(cameraRotation.x);
+            camera.position.y = Math.sin(cameraRotation.x) * cameraDistance + 5;
+            camera.position.z = Math.cos(cameraRotation.y) * cameraDistance * Math.cos(cameraRotation.x);
+            camera.lookAt(0, 2, 0);
+        };
+
+        window.addEventListener('mousedown', (e) => { if (e.button === 0) { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; }});
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+                cameraRotation.y += deltaX * 0.005;
+                cameraRotation.x -= deltaY * 0.005;
+                cameraRotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, cameraRotation.x));
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+                updateCamera();
+            }
+        });
+
+        updateCamera();
+
+        // Raycaster
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let selectedBar = null;
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(bars);
+            bars.forEach(bar => { 
+                bar.material.emissiveIntensity = 0.2; bar.scale.set(1, 1, 1); 
+            });
+            if (intersects.length > 0) {
+                const bar = intersects[0].object;
+                bar.material.emissiveIntensity = 0.5;
+                bar.scale.set(1.1, 1, 1.1);
+                selectedBar = bar;
+            } else {
+                selectedBar = null;
+            }
+        });
+
+        window.addEventListener('click', () => {
+            if (selectedBar) {
+                const data = selectedBar.userData.region;
+                alert(`Region: ${data.region}\nRetention: ${(data.retention*100).toFixed(0)}%\nSentiment: ${data.sentiment}\nAvg Delay: ${data.avg_delay_days.toFixed(2)} days`);
+            }
+        });
+
+        // VR Button logic
+        document.getElementById('vr-button').addEventListener('click', async () => {
+            if (navigator.xr && await navigator.xr.isSessionSupported('immersive-vr')) {
+                renderer.xr.setSession(await navigator.xr.requestSession('immersive-vr'));
+            } else { alert('VR not supported'); }
+        });
+
+        // Animation Loop
+        let time = 0;
+        const animate = () => {
+            time += 0.016;
+
+            // Rings
+            rings.forEach((ring, i) => {
+                const pulse = Math.sin(time * 2 + i) * 0.5 + 0.5;
+                ring.material.opacity = ring.userData.baseOpacity * pulse;
+                ring.scale.set(1 + pulse * 0.2, 1 + pulse * 0.2, 1);
+            });
+
+            // Particles
+            particles.forEach(p => {
+                const pos = p.geometry.attributes.position.array;
+                for (let i = 0; i < pos.length; i += 3) {
+                    pos[i + 1] += Math.sin(time + i) * 0.01;
+                    if (pos[i + 1] > p.userData.baseY + 3) pos[i + 1] = p.userData.baseY;
+                }
+                p.geometry.attributes.position.needsUpdate = true;
+            });
+
+            // Causal Flow
+            if (causalGroup.visible) {
+                flowParticles.forEach(p => {
+                    const positions = p.geometry.attributes.position.array;
+                    const curve = p.userData.curve;
+                    const offsets = p.userData.offsets;
+                    const speed = p.userData.speed;
+                    for(let i = 0; i < offsets.length; i++) {
+                        offsets[i] += speed;
+                        if(offsets[i] > 1) offsets[i] = 0;
+                        const point = curve.getPoint(offsets[i]);
+                        positions[i*3] = point.x;
+                        positions[i*3+1] = point.y;
+                        positions[i*3+2] = point.z;
+                    }
+                    p.geometry.attributes.position.needsUpdate = true;
+                });
+            }
+
+            // Sentiment Emojis
+            if (sentimentGroup.visible) {
+                sentimentGroup.children.forEach((sprite) => {
+                    sprite.position.y = sprite.userData.yPos + Math.sin(time * 3 + sprite.userData.offset) * 0.1;
+                });
+            }
+
+            // Retention Orbitals (Spinning)
+            if (retentionGroup.visible) {
+                retentionGroup.children.forEach(gem => {
+                    const ud = gem.userData;
+                    ud.angle += ud.speed;
+                    gem.position.x = ud.center.x + Math.cos(ud.angle) * ud.radius;
+                    gem.position.z = ud.center.z + Math.sin(ud.angle) * ud.radius;
+                    gem.rotation.y += 0.05; // Spin the gem itself
+                });
+            }
+
+            renderer.render(scene, camera);
+        };
+
+        renderer.setAnimationLoop(animate);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
