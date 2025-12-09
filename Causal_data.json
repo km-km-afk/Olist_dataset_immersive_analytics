@@ -1,0 +1,74 @@
+[
+    {
+        "source": "SP",
+        "effect": "weekend",
+        "val": "0.1d",
+        "type": "info"
+    },
+    {
+        "source": "SP",
+        "effect": "high_order",
+        "val": "4.0d",
+        "type": "info"
+    },
+    {
+        "source": "RJ",
+        "effect": "hub",
+        "val": "-1.3d",
+        "type": "good"
+    },
+    {
+        "source": "RJ",
+        "effect": "weekend",
+        "val": "0.2d",
+        "type": "info"
+    },
+    {
+        "source": "RJ",
+        "effect": "high_order",
+        "val": "3.9d",
+        "type": "info"
+    },
+    {
+        "source": "MG",
+        "effect": "distance",
+        "val": "+2.5d",
+        "type": "bad"
+    },
+    {
+        "source": "MG",
+        "effect": "weekend",
+        "val": "-0.6d",
+        "type": "info"
+    },
+    {
+        "source": "MG",
+        "effect": "high_order",
+        "val": "4.2d",
+        "type": "info"
+    },
+    {
+        "source": "PR",
+        "effect": "weekend",
+        "val": "0.0d",
+        "type": "info"
+    },
+    {
+        "source": "PR",
+        "effect": "high_order",
+        "val": "4.1d",
+        "type": "info"
+    },
+    {
+        "source": "RS",
+        "effect": "weekend",
+        "val": "-1.1d",
+        "type": "info"
+    },
+    {
+        "source": "RS",
+        "effect": "high_order",
+        "val": "3.4d",
+        "type": "info"
+    }
+]
