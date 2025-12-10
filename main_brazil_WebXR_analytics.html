@@ -5,157 +5,234 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brazil E-commerce WebXR Analytics</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; overflow: hidden; background: #000; }
-        
+        /* --- GLOBAL RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { overflow: hidden; background: #000; }
         #container { width: 100vw; height: 100vh; }
-        
+
+        /* --- MODERN GLASS INFO PANEL --- */
         #info-panel {
             position: absolute;
             top: 20px; left: 20px;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            max-width: 320px;
+            width: 340px;
+            background: rgba(10, 10, 10, 0.85); /* Dark Glass */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: #e0e0e0;
+            padding: 0;
             z-index: 100;
-            border: 1px solid #333;
-        }
-        
-        #info-panel h2 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            border-bottom: 2px solid #00ff88;
-            padding-bottom: 8px;
-        }
-        
-        #info-panel h3 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-            color: #00ff88;
-        }
-        
-        #info-panel p { margin: 4px 0; font-size: 12px; }
-        
-        .feature-section { margin-bottom: 15px; }
-        
-        .highlight-box {
-            background: rgba(0, 255, 136, 0.1);
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 12px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        .causal-legend {
-            background: rgba(255, 50, 50, 0.1);
-            border-left: 3px solid #ff3333;
+        /* HEADER */
+        .panel-header {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .panel-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-header .live-indicator {
+            width: 8px; height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff88;
+            animation: blink 2s infinite;
+        }
+
+        /* ACCORDION (DROPDOWNS) */
+        details {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+        }
+        details:last-child { border-bottom: none; }
+        details:hover { background: rgba(255, 255, 255, 0.02); }
+
+        summary {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ccc;
+            outline: none;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::after {
+            content: '+';
+            font-size: 16px;
+            font-weight: 300;
+            transition: transform 0.3s;
+        }
+        details[open] summary::after { transform: rotate(45deg); }
+        details[open] summary { color: #fff; background: rgba(255, 255, 255, 0.05); }
+
+        /* CONTENT INSIDE DROPDOWNS */
+        .content {
+            padding: 12px 20px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #aaa;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .content p { margin-bottom: 8px; }
+        .content p:last-child { margin-bottom: 0; }
         
-        .highlight-box p { font-size: 11px; font-style: italic; }
+        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+        /* FOOTER */
+        .panel-footer {
+            padding: 10px 20px;
+            font-size: 10px;
+            text-align: center;
+            color: #666;
+            background: rgba(0,0,0,0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* ANIMATIONS */
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         
-        /* CONTROLS CONTAINER */
+        /* CONTROLS (BUTTONS) */
         .controls {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 10px;
+            gap: 12px;
             z-index: 1000;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 100%;
+            padding: 10px;
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
         button {
-            padding: 12px 14px;
+            padding: 10px 18px;
             font-size: 12px;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            color: rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
             cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s;
-            background: #333; 
-            border: 1px solid #555;
-            white-space: nowrap;
+            font-weight: 600;
+            background: transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        button:hover { background: #444; }
+        button:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-2px); }
+        
+       /* ACTIVE STATES */
+        #causal-button.active { background: rgba(255, 50, 50, 0.2); border-color: #ff3333; color: #ff3333; box-shadow: 0 0 15px rgba(255, 0, 0, 0.2); }
+        #correlation-button.active { background: rgba(0, 204, 204, 0.2); border-color: #00ffff; color: #00ffff; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); }
+        #sentiment-button.active { background: rgba(204, 0, 204, 0.2); border-color: #ff00ff; color: #ff00ff; box-shadow: 0 0 15px rgba(255, 0, 255, 0.2); }
+        #retention-button.active { background: rgba(255, 215, 0, 0.2); border-color: #ffd700; color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        
+        /* UPDATED: Optimization Active State (High-Vis Orange) */
+        #optimize-button.active { 
+            background: rgba(255, 255, 255, 0.2); 
+            border-color: hsl(0, 0%, 100%); 
+            color: #ffffff; /* This bright orange is very visible on black */
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); 
+            animation: pulse-orange 2s infinite; 
+        }
 
-        /* Specific Button Styles */
-        #vr-button { background: #1a73e8; border: none; }
+        #vr-button { background: #1a73e8; border: none; color: white; }
         #vr-button:hover { background: #1557b0; }
 
-        #causal-button.active { 
-            background: #ff3333; 
-            border-color: #ff0000; 
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); 
-        }
-
-        #correlation-button.active { 
-            background: #00cccc; 
-            color: #000;
-            border-color: #00ffff; 
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4); 
-        }
-
-        #sentiment-button.active { 
-            background: #cc00cc; 
-            border-color: #ff00ff; 
-            box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); 
-        }
-
-        #retention-button.active { 
-            background: #ffd700; 
-            color: #000;
-            border-color: #ffff00; 
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); 
-        }
-        
-        .footer-note { margin: 15px 0 0 0; font-size: 11px; opacity: 0.7; }
     </style>
 </head>
 <body>
     <div id="container"></div>
     
     <div id="info-panel">
-        <h2>Brazil Logistics Analytics</h2>
-        
-        <div class="feature-section">
-            <h3>Visual Encodings:</h3>
-            <p>🏔️ <strong>Bar Height</strong> = Delivery Delay</p>
-            <p>🎨 <strong>Bar Color</strong> = Cancel Rate</p>
-            <p>📦 <strong>Bar Size</strong> = Order Volume</p>
+        <div class="panel-header">
+            <h2><div class="live-indicator"></div> Supply Chain AI</h2>
         </div>
 
-        <div class="feature-section">
-            <h3 style="color: #ffd700;">Customer Retention:</h3>
-            <p>💎 <strong>Orbiting Gems</strong> = Return Rate</p>
-            <p>🥇 Gold (3) > 80% | 🥈 Silver (2) > 50%</p>
+        <div class="accordion">
+            <details open>
+                <summary>📊 Data Visualization</summary>
+                <div class="content">
+                    <p>Visualizing 200k+ shipments across Brazil.</p>
+                    <div class="legend-item"><span class="dot" style="background:white;"></span> <strong>Bar Height:</strong> Delivery Delay</div>
+                    <div class="legend-item"><span class="dot" style="background:#ff3333;"></span> <strong>Color (Red):</strong> Cancellation Risk</div>
+                    <div class="legend-item"><span class="dot" style="background:grey;"></span> <strong>Width:</strong> Order Volume</div>
+                </div>
+            </details>
+
+            <details>
+                <summary style="color: #0088ff;">💡 AI Optimization</summary>
+                <div class="content">
+                    <p><strong>Interactive Mode:</strong></p>
+                    <p>1. Activate <strong>OPTIMIZATION</strong> button below.</p>
+                    <p>2. <strong>Click anywhere</strong> on the map floor.</p>
+                    <p>3. AI uses K-Means to find the nearest demand cluster and calculates Days Saved vs. SP Hub.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary style="color: #00ffff;">🤖 ML Insights</summary>
+                <div class="content">
+                    <p><strong>🔗 Correlations (Arcs):</strong> Connects states with statistically identical failure patterns.</p>
+                    <p><strong>👁️ Causal Inference:</strong> Red flows indicate regions where distance is the <em>proven cause</em> of delay.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary style="color: #ffd700;">💎 Customer Retention</summary>
+                <div class="content">
+                    <p><strong>Orbiting Gems</strong> represent loyalty:</p>
+                    <p>🥇 <strong>Gold (3):</strong> >80% Return Rate</p>
+                    <p>🥈 <strong>Silver (2):</strong> >50% Return Rate</p>
+                    <p>🥉 <strong>Bronze (1):</strong> <50% Return Rate</p>
+                </div>
+            </details>
+
+            <details>
+                <summary style="color: #ff00ff;">💬Customer Sentiment</summary>
+                <div class="content">
+                    <p>Customer Rating Analysis</p>
+                    <p>😍 = Positive Sentiment</p>
+                    <p>🤬 = Negative Sentiment</p>
+                </div>
+            </details>
         </div>
 
-        <div class="feature-section">
-            <h3 style="color: #ff3333;">Causal Inference:</h3>
-            <p>🔴 <strong>Red Flow</strong> = Causes Delay</p>
+        <div class="panel-footer">
+            Drag to Rotate • Scroll to Zoom • Click Bars for Info
         </div>
-        
-        <div class="feature-section">
-             <h3 style="color: #cc00cc;">Sentiment (NLP):</h3>
-             <p>😍 = Happy | 🤬 = Angry</p>
-        </div>
-        
-        <p class="footer-note">Drag to rotate • Click bars for details</p>
     </div>
     
     <div class="controls">
         <button id="correlation-button">🔗 Links</button>
         <button id="causal-button">👁️ Causal</button>
-        <button id="sentiment-button">💬 Sentiment</button>
-        <button id="retention-button">💎 Retention</button>
-        <button id="vr-button">ENTER VR</button>
+        <button id="sentiment-button">💬 NLP</button>
+        <button id="retention-button">💎 Loyalty</button>
+        <button id="optimize-button">💡 Optimization</button>
+        <button id="vr-button">VR MODE</button>
     </div>
 
     <script type="importmap">
@@ -169,35 +246,35 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // Regional data with Retention Rate (0.0 - 1.0)
+        // --- 1. DATA SETUP ---
         const data = [
-            { region: "AC", avg_delay_days: -20.47, avg_delay_norm: 2.45, late_orders_pct: 0.037, cancel_rate: 0.0, total_orders: 81, lat: -9.0, lon: -70.0, sentiment: -0.8, retention: 0.2 },
-            { region: "AL", avg_delay_days: -8.37, avg_delay_norm: 1.0, late_orders_pct: 0.206, cancel_rate: 0.002, total_orders: 413, lat: -9.5, lon: -36.6, sentiment: 0.2, retention: 0.6 },
-            { region: "AM", avg_delay_days: -19.17, avg_delay_norm: 2.29, late_orders_pct: 0.027, cancel_rate: 0.0, total_orders: 148, lat: -3.1, lon: -60.0, sentiment: -0.7, retention: 0.3 },
-            { region: "AP", avg_delay_days: -19.40, avg_delay_norm: 2.32, late_orders_pct: 0.029, cancel_rate: 0.0, total_orders: 68, lat: 1.4, lon: -51.8, sentiment: -0.6, retention: 0.25 },
-            { region: "BA", avg_delay_days: -10.40, avg_delay_norm: 1.24, late_orders_pct: 0.117, cancel_rate: 0.005, total_orders: 3380, lat: -12.5, lon: -41.7, sentiment: -0.1, retention: 0.55 },
-            { region: "CE", avg_delay_days: -10.34, avg_delay_norm: 1.24, late_orders_pct: 0.132, cancel_rate: 0.005, total_orders: 1336, lat: -5.5, lon: -39.3, sentiment: 0.1, retention: 0.62 },
-            { region: "DF", avg_delay_days: -11.71, avg_delay_norm: 1.40, late_orders_pct: 0.055, cancel_rate: 0.003, total_orders: 2140, lat: -15.8, lon: -47.9, sentiment: 0.6, retention: 0.78 },
-            { region: "ES", avg_delay_days: -10.30, avg_delay_norm: 1.23, late_orders_pct: 0.105, cancel_rate: 0.004, total_orders: 2033, lat: -19.2, lon: -40.3, sentiment: 0.3, retention: 0.7 },
-            { region: "GO", avg_delay_days: -11.81, avg_delay_norm: 1.41, late_orders_pct: 0.063, cancel_rate: 0.006, total_orders: 2020, lat: -15.8, lon: -49.3, sentiment: 0.4, retention: 0.72 },
-            { region: "MA", avg_delay_days: -9.19, avg_delay_norm: 1.10, late_orders_pct: 0.167, cancel_rate: 0.005, total_orders: 747, lat: -4.9, lon: -45.3, sentiment: -0.2, retention: 0.45 },
-            { region: "MG", avg_delay_days: -12.92, avg_delay_norm: 1.54, late_orders_pct: 0.045, cancel_rate: 0.006, total_orders: 11635, lat: -18.5, lon: -44.4, sentiment: 0.5, retention: 0.82 },
-            { region: "MS", avg_delay_days: -10.84, avg_delay_norm: 1.29, late_orders_pct: 0.095, cancel_rate: 0.003, total_orders: 715, lat: -20.4, lon: -54.6, sentiment: 0.3, retention: 0.68 },
-            { region: "MT", avg_delay_days: -14.03, avg_delay_norm: 1.68, late_orders_pct: 0.058, cancel_rate: 0.002, total_orders: 907, lat: -12.6, lon: -56.1, sentiment: 0.1, retention: 0.6 },
-            { region: "PA", avg_delay_days: -13.65, avg_delay_norm: 1.63, late_orders_pct: 0.109, cancel_rate: 0.004, total_orders: 975, lat: -1.9, lon: -54.9, sentiment: -0.3, retention: 0.4 },
-            { region: "PB", avg_delay_days: -12.79, avg_delay_norm: 1.53, late_orders_pct: 0.101, cancel_rate: 0.004, total_orders: 536, lat: -7.2, lon: -36.7, sentiment: 0.0, retention: 0.58 },
-            { region: "PE", avg_delay_days: -12.82, avg_delay_norm: 1.53, late_orders_pct: 0.093, cancel_rate: 0.003, total_orders: 1652, lat: -8.3, lon: -37.9, sentiment: 0.1, retention: 0.65 },
-            { region: "PI", avg_delay_days: -10.87, avg_delay_norm: 1.30, late_orders_pct: 0.133, cancel_rate: 0.008, total_orders: 495, lat: -7.7, lon: -42.7, sentiment: -0.1, retention: 0.5 },
-            { region: "PR", avg_delay_days: -12.99, avg_delay_norm: 1.55, late_orders_pct: 0.039, cancel_rate: 0.004, total_orders: 5045, lat: -24.0, lon: -51.2, sentiment: 0.7, retention: 0.88 },
-            { region: "RJ", avg_delay_days: -11.31, avg_delay_norm: 1.35, late_orders_pct: 0.116, cancel_rate: 0.007, total_orders: 12852, lat: -22.3, lon: -42.5, sentiment: 0.4, retention: 0.79 },
-            { region: "RN", avg_delay_days: -13.34, avg_delay_norm: 1.59, late_orders_pct: 0.091, cancel_rate: 0.0, total_orders: 485, lat: -5.8, lon: -36.5, sentiment: 0.0, retention: 0.52 },
-            { region: "RO", avg_delay_days: -19.31, avg_delay_norm: 2.31, late_orders_pct: 0.028, cancel_rate: 0.012, total_orders: 253, lat: -10.9, lon: -62.8, sentiment: -0.5, retention: 0.35 },
-            { region: "RR", avg_delay_days: -15.41, avg_delay_norm: 1.84, late_orders_pct: 0.109, cancel_rate: 0.022, total_orders: 46, lat: 2.8, lon: -60.7, sentiment: -0.4, retention: 0.3 },
-            { region: "RS", avg_delay_days: -13.60, avg_delay_norm: 1.62, late_orders_pct: 0.059, cancel_rate: 0.005, total_orders: 5466, lat: -30.0, lon: -51.2, sentiment: 0.6, retention: 0.85 },
-            { region: "SC", avg_delay_days: -11.22, avg_delay_norm: 1.34, late_orders_pct: 0.080, cancel_rate: 0.005, total_orders: 3637, lat: -27.2, lon: -50.2, sentiment: 0.7, retention: 0.86 },
-            { region: "SE", avg_delay_days: -9.59, avg_delay_norm: 1.15, late_orders_pct: 0.146, cancel_rate: 0.003, total_orders: 350, lat: -10.6, lon: -37.4, sentiment: 0.2, retention: 0.6 },
-            { region: "SP", avg_delay_days: -10.74, avg_delay_norm: 1.28, late_orders_pct: 0.044, cancel_rate: 0.008, total_orders: 41746, lat: -23.5, lon: -46.6, sentiment: 0.8, retention: 0.92 },
-            { region: "TO", avg_delay_days: -11.87, avg_delay_norm: 1.42, late_orders_pct: 0.096, cancel_rate: 0.004, total_orders: 280, lat: -10.2, lon: -48.3, sentiment: 0.1, retention: 0.55 }
+            { "region":"AC", "avg_delay_days":20.63, "late_orders_pct":0.037, "cancel_rate":0.0, "total_orders":81, "sentiment":0.52, "avg_delay_norm":1.78, "lat":-9.96, "lon":-67.83, "retention":0.098 },
+            { "region":"AL", "avg_delay_days":24.02, "late_orders_pct":0.23, "cancel_rate":0.002, "total_orders":417, "sentiment":0.37, "avg_delay_norm":2.07, "lat":-9.63, "lon":-35.75, "retention":0.06 },
+            { "region":"AM", "avg_delay_days":25.94, "late_orders_pct":0.04, "cancel_rate":0.0, "total_orders":149, "sentiment":0.59, "avg_delay_norm":2.23, "lat":-3.08, "lon":-60.01, "retention":0.054 },
+            { "region":"AP", "avg_delay_days":26.73, "late_orders_pct":0.044, "cancel_rate":0.0, "total_orders":68, "sentiment":0.59, "avg_delay_norm":2.30, "lat":0.03, "lon":-51.07, "retention":0.029 },
+            { "region":"BA", "avg_delay_days":18.88, "late_orders_pct":0.135, "cancel_rate":0.004, "total_orders":3397, "sentiment":0.43, "avg_delay_norm":1.62, "lat":-12.95, "lon":-38.95, "retention":0.058 },
+            { "region":"CE", "avg_delay_days":20.81, "late_orders_pct":0.147, "cancel_rate":0.005, "total_orders":1339, "sentiment":0.42, "avg_delay_norm":1.79, "lat":-3.78, "lon":-38.58, "retention":0.035 },
+            { "region":"DF", "avg_delay_days":12.53, "late_orders_pct":0.068, "cancel_rate":0.003, "total_orders":2160, "sentiment":0.53, "avg_delay_norm":1.08, "lat":-15.81, "lon":-47.93, "retention":0.06 },
+            { "region":"ES", "avg_delay_days":15.34, "late_orders_pct":0.119, "cancel_rate":0.004, "total_orders":2043, "sentiment":0.52, "avg_delay_norm":1.32, "lat":-20.29, "lon":-40.32, "retention":0.062 },
+            { "region":"GO", "avg_delay_days":15.14, "late_orders_pct":0.079, "cancel_rate":0.006, "total_orders":2037, "sentiment":0.52, "avg_delay_norm":1.30, "lat":-16.68, "lon":-49.26, "retention":0.066 },
+            { "region":"MA", "avg_delay_days":21.06, "late_orders_pct":0.187, "cancel_rate":0.005, "total_orders":751, "sentiment":0.38, "avg_delay_norm":1.81, "lat":-3.28, "lon":-44.29, "retention":0.052 },
+            { "region":"MG", "avg_delay_days":11.54, "late_orders_pct":0.054, "cancel_rate":0.005, "total_orders":11706, "sentiment":0.56, "avg_delay_norm":0.99, "lat":-19.92, "lon":-43.97, "retention":0.062 },
+            { "region":"MS", "avg_delay_days":15.20, "late_orders_pct":0.112, "cancel_rate":0.002, "total_orders":726, "sentiment":0.55, "avg_delay_norm":1.31, "lat":-20.48, "lon":-54.61, "retention":0.055 },
+            { "region":"MT", "avg_delay_days":17.58, "late_orders_pct":0.065, "cancel_rate":0.002, "total_orders":910, "sentiment":0.55, "avg_delay_norm":1.51, "lat":-15.24, "lon":-56.03, "retention":0.068 },
+            { "region":"PA", "avg_delay_days":23.31, "late_orders_pct":0.119, "cancel_rate":0.004, "total_orders":981, "sentiment":0.42, "avg_delay_norm":2.01, "lat":-1.46, "lon":-48.48, "retention":0.051 },
+            { "region":"PB", "avg_delay_days":19.93, "late_orders_pct":0.106, "cancel_rate":0.003, "total_orders":537, "sentiment":0.50, "avg_delay_norm":1.71, "lat":-7.12, "lon":-35.48, "retention":0.059 },
+            { "region":"PE", "avg_delay_days":17.93, "late_orders_pct":0.103, "cancel_rate":0.003, "total_orders":1663, "sentiment":0.50, "avg_delay_norm":1.54, "lat":-8.08, "lon":-34.95, "retention":0.05 },
+            { "region":"PI", "avg_delay_days":18.98, "late_orders_pct":0.153, "cancel_rate":0.008, "total_orders":496, "sentiment":0.46, "avg_delay_norm":1.63, "lat":-5.09, "lon":-42.76, "retention":0.048 },
+            { "region":"PR", "avg_delay_days":11.53, "late_orders_pct":0.048, "cancel_rate":0.004, "total_orders":5064, "sentiment":0.59, "avg_delay_norm":0.99, "lat":-25.38, "lon":-50.61, "retention":0.061 },
+            { "region":"RJ", "avg_delay_days":14.85, "late_orders_pct":0.129, "cancel_rate":0.006, "total_orders":12930, "sentiment":0.43, "avg_delay_norm":1.28, "lat":-22.87, "lon":-43.24, "retention":0.069 },
+            { "region":"RN", "avg_delay_days":18.81, "late_orders_pct":0.104, "cancel_rate":0.0, "total_orders":487, "sentiment":0.55, "avg_delay_norm":1.62, "lat":-5.83, "lon":-35.26, "retention":0.045 },
+            { "region":"RO", "avg_delay_days":18.91, "late_orders_pct":0.027, "cancel_rate":0.011, "total_orders":253, "sentiment":0.52, "avg_delay_norm":1.63, "lat":-10.43, "lon":-63.02, "retention":0.094 },
+            { "region":"RR", "avg_delay_days":28.97, "late_orders_pct":0.108, "cancel_rate":0.021, "total_orders":46, "sentiment":0.30, "avg_delay_norm":2.5, "lat":2.82, "lon":-60.69, "retention":0.043 },
+            { "region":"RS", "avg_delay_days":14.83, "late_orders_pct":0.070, "cancel_rate":0.004, "total_orders":5506, "sentiment":0.56, "avg_delay_norm":1.28, "lat":-29.79, "lon":-51.24, "retention":0.065 },
+            { "region":"SC", "avg_delay_days":14.50, "late_orders_pct":0.095, "cancel_rate":0.005, "total_orders":3651, "sentiment":0.53, "avg_delay_norm":1.25, "lat":-27.09, "lon":-49.03, "retention":0.056 },
+            { "region":"SE", "avg_delay_days":21.02, "late_orders_pct":0.145, "cancel_rate":0.002, "total_orders":350, "sentiment":0.40, "avg_delay_norm":1.81, "lat":-10.92, "lon":-37.07, "retention":0.054 },
+            { "region":"SP", "avg_delay_days":8.30, "late_orders_pct":0.057, "cancel_rate":0.007, "total_orders":41964, "sentiment":0.58, "avg_delay_norm":0.71, "lat":-23.52, "lon":-46.68, "retention":0.066 },
+            { "region":"TO", "avg_delay_days":17.22, "late_orders_pct":0.125, "cancel_rate":0.003, "total_orders":280, "sentiment":0.54, "avg_delay_norm":1.48, "lat":-10.18, "lon":-48.32, "retention":0.05 }
         ];
 
         // Border coordinates
@@ -219,27 +296,36 @@
             [-64.0, 1.6], [-63.4, 2.0], [-61.4, 2.7], [-60.6758, 5.2721]
         ];
 
-        // 1. CAUSAL DATA: Define relationships
         const causalFindings = [
-            { source: "SP", target: "AM", effect: "distance", strength: 0.9, val: "+8.4d", type: "bad" },
-            { source: "SP", target: "RR", effect: "distance", strength: 0.95, val: "+9.1d", type: "bad" },
-            { source: "SP", target: "MG", effect: "hub", strength: 0.7, val: "-1.5d", type: "good" },
-            { source: "RJ", target: "ES", effect: "hub", strength: 0.5, val: "-0.8d", type: "good" },
-            { source: "DF", target: "GO", effect: "hub", strength: 0.6, val: "-1.1d", type: "good" }
+            { source: "SP", effect: "weekend", val: "0.1d", type: "info" },
+            { source: "SP", effect: "high_order", val: "4.0d", type: "info" },
+            { source: "RJ", effect: "hub", val: "-1.3d", type: "good" },
+            { source: "RJ", effect: "weekend", val: "0.2d", type: "info" },
+            { source: "MG", effect: "distance", val: "+2.5d", type: "bad" },
         ];
+        
+        const farStates = ['AM', 'RR', 'AP', 'AC', 'RO', 'PA', 'TO'];
+        const neighborStates = ['MG', 'PR', 'RJ', 'ES', 'SC'];
 
-        // Groups
+        // GROUPS
         const causalGroup = new THREE.Group(); causalGroup.visible = false; 
         const correlationGroup = new THREE.Group(); correlationGroup.visible = false;
         const sentimentGroup = new THREE.Group(); sentimentGroup.visible = false;
         const retentionGroup = new THREE.Group(); retentionGroup.visible = false;
-
+        
+        // OPTIMIZATION GROUP
+        const optimizationGroup = new THREE.Group(); 
+        optimizationGroup.visible = false; 
+        
         const flowParticles = []; 
+        let optimizationParticles = []; // Using 'let' to avoid reassignment errors
 
-        // Three.js setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0a0a);
         
+        // Add Optimization Group to Scene
+        scene.add(optimizationGroup);
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 8, 12);
         camera.lookAt(0, 0, 0);
@@ -249,14 +335,12 @@
         renderer.xr.enabled = true;
         document.getElementById('container').appendChild(renderer.domElement);
 
-        // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 10, 5);
         scene.add(directionalLight);
 
-        // Calculate bounds
         const allLats = brazilBorder.map(p => p[1]);
         const allLons = brazilBorder.map(p => p[0]);
         const latRange = { min: Math.min(...allLats), max: Math.max(...allLats) };
@@ -266,7 +350,6 @@
             return ((value - min) / (max - min)) * (newMax - newMin) + newMin;
         };
 
-        // Create Brazil map floor
         const floorGeometry = new THREE.PlaneGeometry(26, 26);
         const canvas = document.createElement('canvas');
         canvas.width = 2048; canvas.height = 2048;
@@ -278,7 +361,6 @@
         const latToY = (lat) => normalize(lat, latRange.min, latRange.max, canvas.height - 100, 100);
         const lonToX = (lon) => normalize(lon, lonRange.min, lonRange.max, 100, canvas.width - 100);
         
-        // Draw Brazil outline
         ctx.strokeStyle = '#00ff88';
         ctx.lineWidth = 6;
         ctx.fillStyle = '#0a3d2a';
@@ -292,7 +374,6 @@
         ctx.fill();
         ctx.stroke();
         
-        // Add state labels
         ctx.fillStyle = '#ffffff';
         ctx.font = 'Bold 32px Arial';
         ctx.textAlign = 'center';
@@ -306,7 +387,6 @@
             ctx.fillText(region.region, x, y);
         });
         
-        // Grid
         ctx.strokeStyle = '#1a1a1a';
         ctx.lineWidth = 1;
         for (let i = 0; i < canvas.width; i += 128) {
@@ -319,38 +399,30 @@
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Create visualization objects
         const bars = [];
         const rings = [];
         const particles = [];
         const maxOrders = Math.max(...data.map(d => d.total_orders));
-        const regionMap = {}; // Initialize map for causal links
+        const regionMap = {};
 
         data.forEach((region, idx) => {
             const x = normalize(region.lon, lonRange.min, lonRange.max, -11, 11);
             const z = -normalize(region.lat, latRange.min, latRange.max, -11, 11);
-            
             const height = Math.max(0.2, region.avg_delay_norm * 1.5);
-            
-            // Store data for Causal Links
             regionMap[region.region] = { x, y: height, z };
 
             const cancelColor = new THREE.Color();
             cancelColor.setHSL(0.33 - (region.cancel_rate * 15), 0.8, 0.5);
             const size = 0.3 + (region.total_orders / maxOrders) * 1.5;
             
-            // Main bar
             const geometry = new THREE.BoxGeometry(size, height, size);
-            const material = new THREE.MeshPhongMaterial({ 
-                color: cancelColor, emissive: cancelColor, emissiveIntensity: 0.2, transparent: true, opacity: 0.9 
-            });
+            const material = new THREE.MeshPhongMaterial({ color: cancelColor, emissive: cancelColor, emissiveIntensity: 0.2, transparent: true, opacity: 0.9 });
             const bar = new THREE.Mesh(geometry, material);
             bar.position.set(x, height / 2, z);
             bar.userData = { region, index: idx, size: size };
             scene.add(bar);
             bars.push(bar);
 
-            // Pulsing ring
             const ring = new THREE.Mesh(
                 new THREE.RingGeometry(size * 0.8, size * 1.2, 32),
                 new THREE.MeshBasicMaterial({ color: 0xff3333, transparent: true, opacity: region.late_orders_pct * 2, side: THREE.DoubleSide })
@@ -361,24 +433,20 @@
             scene.add(ring);
             rings.push(ring);
 
-            // Particles
             const particleCount = Math.floor((region.total_orders / maxOrders) * 50);
             const pGeo = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
-            
             for (let i = 0; i < particleCount; i++) {
                 positions[i * 3] = x + (Math.random() - 0.5) * size;
                 positions[i * 3 + 1] = height + Math.random() * 2;
                 positions[i * 3 + 2] = z + (Math.random() - 0.5) * size;
             }
-            
             pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             const pSys = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.6 }));
             pSys.userData = { baseY: height };
             scene.add(pSys);
             particles.push(pSys);
 
-            // Label sprite
             const labelCanvas = document.createElement('canvas');
             const labelCtx = labelCanvas.getContext('2d');
             labelCanvas.width = 256; labelCanvas.height = 128;
@@ -394,8 +462,9 @@
             scene.add(sprite);
         });
 
-        // 1. CORRELATION LINES
-        scene.add(correlationGroup);
+        // --- 1. UPDATED CURVED CORRELATION LINES ---
+        const correlationMat = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.3 });
+        
         data.forEach((region1, i) => {
             data.forEach((region2, j) => {
                 if (i >= j) return;
@@ -405,208 +474,302 @@
                 const lateDiff = Math.abs(region1.late_orders_pct - region2.late_orders_pct);
                 const similarity = Math.sqrt(delayDiff**2 + cancelDiff**2 * 100 + lateDiff**2);
                 
-                if (similarity < 0.5) {
-                    const x1 = normalize(region1.lon, lonRange.min, lonRange.max, -11, 11);
-                    const z1 = -normalize(region1.lat, latRange.min, latRange.max, -11, 11);
-                    const y1 = region1.avg_delay_norm * 1.5 / 2;
+                // Strict threshold (0.2)
+                if (similarity < 0.2) {
+                    const p1 = regionMap[region1.region];
+                    const p2 = regionMap[region2.region];
                     
-                    const x2 = normalize(region2.lon, lonRange.min, lonRange.max, -11, 11);
-                    const z2 = -normalize(region2.lat, latRange.min, latRange.max, -11, 11);
-                    const y2 = region2.avg_delay_norm * 1.5 / 2;
+                    const v1 = new THREE.Vector3(p1.x, 0.5, p1.z);
+                    const v2 = new THREE.Vector3(p2.x, 0.5, p2.z);
                     
-                    const points = [new THREE.Vector3(x1, y1, z1), new THREE.Vector3(x2, y2, z2)];
+                    // Bezier Curve Logic
+                    const dist = v1.distanceTo(v2);
+                    const mid = new THREE.Vector3().addVectors(v1, v2).multiplyScalar(0.5);
+                    mid.y += dist * 0.4; // Arc Height
                     
-                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const lineMaterial = new THREE.LineBasicMaterial({ 
-                        color: 0x00ffff, 
-                        transparent: true, 
-                        opacity: (0.5 - similarity) * 2 
-                    });
-                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    const curve = new THREE.QuadraticBezierCurve3(v1, mid, v2);
+                    const points = curve.getPoints(20);
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    
+                    const line = new THREE.Line(geometry, correlationMat);
                     correlationGroup.add(line);
                 }
             });
         });
+        scene.add(correlationGroup);
 
-        // 2. CAUSAL CURVES BUILDER
-        function createCausalLinks(scene, regionMap) {
+        // 2. CAUSAL VISUALIZATION
+        function createCausalIndicators(scene, regionMap) {
             scene.add(causalGroup);
-            causalFindings.forEach(link => {
-                const start = regionMap[link.source];
-                const end = regionMap[link.target];
-                if (!start || !end) return;
-
-                const p1 = new THREE.Vector3(start.x, start.y, start.z);
-                const p2 = new THREE.Vector3(end.x, end.y, end.z);
-                const distance = p1.distanceTo(p2);
-                const arcHeight = 4 + (distance / 2);
-                const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-                mid.y += arcHeight;
-                
-                const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
-                
-                const points = curve.getPoints(50);
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                const linkColor = link.type === 'bad' ? 0xff3333 : 0x00ffff;
-                const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: linkColor, transparent: true, opacity: 0.15 }));
-                causalGroup.add(line);
-
-                const flowCount = Math.floor(distance * 3);
-                const flowGeo = new THREE.BufferGeometry();
-                const flowPos = new Float32Array(flowCount * 3);
-                const flowOffsets = []; 
-
-                for(let i=0; i<flowCount; i++) {
-                    flowOffsets.push(Math.random());
-                    flowPos[i*3] = 0; flowPos[i*3+1] = 0; flowPos[i*3+2] = 0;
-                }
-                flowGeo.setAttribute('position', new THREE.BufferAttribute(flowPos, 3));
-                const flowSys = new THREE.Points(flowGeo, new THREE.PointsMaterial({ color: linkColor, size: 0.25, transparent: true, opacity: 0.9 }));
-                flowSys.userData = { curve: curve, offsets: flowOffsets, speed: 0.005 + (link.strength * 0.005) };
-                causalGroup.add(flowSys);
-                flowParticles.push(flowSys);
-
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 128; canvas.height = 64;
-                ctx.fillStyle = link.type === 'bad' ? 'rgba(100, 0, 0, 0.9)' : 'rgba(0, 100, 100, 0.9)';
-                ctx.strokeStyle = link.type === 'bad' ? '#ff5555' : '#55ffff';
-                ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.roundRect(5, 5, 118, 54, 25); ctx.fill(); ctx.stroke();
-                ctx.font = 'Bold 28px Arial'; ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(link.val, 64, 32);
-
-                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
-                const labelPos = curve.getPoint(0.75);
-                sprite.position.copy(labelPos);
-                sprite.scale.set(1.5, 0.75, 1);
-                causalGroup.add(sprite);
+            const groupedFindings = {};
+            causalFindings.forEach(f => {
+                if (!groupedFindings[f.source]) groupedFindings[f.source] = [];
+                groupedFindings[f.source].push(f);
+            });
+            Object.keys(groupedFindings).forEach(regionKey => {
+                const mapPos = regionMap[regionKey];
+                const findings = groupedFindings[regionKey];
+                if (!mapPos) return;
+                let bubbleIndex = 0;
+                findings.forEach(finding => {
+                    let targetStates = [];
+                    let arcColor = 0xffffff;
+                    if (finding.effect === 'distance') { targetStates = farStates; arcColor = 0xff3333; } 
+                    else if (finding.effect === 'hub') { targetStates = neighborStates; arcColor = 0x00ff88; }
+                    if (targetStates.length > 0) {
+                        targetStates.forEach(targetKey => {
+                            if (targetKey === regionKey) return;
+                            const targetPos = regionMap[targetKey];
+                            if (!targetPos) return;
+                            const p1 = new THREE.Vector3(mapPos.x, mapPos.y, mapPos.z);
+                            const p2 = new THREE.Vector3(targetPos.x, targetPos.y, targetPos.z);
+                            const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+                            mid.y += 3 + p1.distanceTo(p2) * 0.3;
+                            const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+                            const points = curve.getPoints(40);
+                            const geo = new THREE.BufferGeometry().setFromPoints(points);
+                            const mat = new THREE.LineBasicMaterial({ color: arcColor, transparent: true, opacity: 0.15 });
+                            causalGroup.add(new THREE.Line(geo, mat));
+                            
+                            const flowCount = 10;
+                            const flowGeo = new THREE.BufferGeometry();
+                            const flowPos = new Float32Array(flowCount * 3);
+                            const flowOffsets = []; 
+                            for(let i=0; i<flowCount; i++) { flowOffsets.push(Math.random()); flowPos[i*3]=0; flowPos[i*3+1]=0; flowPos[i*3+2]=0; }
+                            flowGeo.setAttribute('position', new THREE.BufferAttribute(flowPos, 3));
+                            const flowSys = new THREE.Points(flowGeo, new THREE.PointsMaterial({ color: arcColor, size: 0.15, transparent: true, opacity: 0.8 }));
+                            flowSys.userData = { curve: curve, offsets: flowOffsets, speed: 0.005 };
+                            causalGroup.add(flowSys);
+                            flowParticles.push(flowSys);
+                        });
+                    }
+                    const yPos = mapPos.y + 1.2 + (bubbleIndex * 0.8);
+                    const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128; const ctx = canvas.getContext('2d');
+                    let bgColor = 'rgba(100, 100, 100, 0.8)'; let borderColor = '#cccccc';
+                    if (finding.type === 'good') { bgColor = 'rgba(0, 100, 50, 0.8)'; borderColor = '#00ff88'; }
+                    if (finding.type === 'bad') { bgColor = 'rgba(150, 0, 0, 0.8)'; borderColor = '#ff3333'; }
+                    ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor; ctx.lineWidth = 4;
+                    if(ctx.roundRect) { ctx.beginPath(); ctx.roundRect(10, 10, 236, 108, 20); ctx.fill(); ctx.stroke(); } else { ctx.fillRect(10,10,236,108); ctx.strokeRect(10,10,236,108); }
+                    ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.font = 'Bold 36px Arial'; ctx.fillText(finding.val, 128, 50); ctx.font = '24px Arial'; ctx.fillStyle = '#eeeeee'; ctx.fillText(finding.effect.toUpperCase(), 128, 90);
+                    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+                    sprite.position.set(mapPos.x, yPos, mapPos.z); sprite.scale.set(1.5, 0.75, 1); sprite.userData = { baseY: yPos, offset: bubbleIndex * 100 + Math.random() * 100 };
+                    causalGroup.add(sprite);
+                    bubbleIndex++;
+                });
             });
         }
-        createCausalLinks(scene, regionMap);
+        createCausalIndicators(scene, regionMap);
 
-        // 3. SENTIMENT EMOJIS
+        // 3. SENTIMENT
         function createSentimentEmojis(scene, regionMap) {
             scene.add(sentimentGroup);
-
             data.forEach(region => {
                 const mapPos = regionMap[region.region];
                 if(!mapPos) return;
-
-                let emoji = "😐";
-                if (region.sentiment >= 0.2) emoji = "😍";
-                else if (region.sentiment <= -0.2) emoji = "🤬";
-
-                const canvas = document.createElement('canvas');
-                canvas.width = 256; canvas.height = 256;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = "rgba(0,0,0,0.6)";
-                ctx.beginPath(); ctx.arc(128, 128, 100, 0, Math.PI*2); ctx.fill();
-                ctx.font = "160px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.fillText(emoji, 128, 138);
-
+                let emoji = "😐"; 
+                if (region.sentiment >= 0.55) emoji = "😍"; else if (region.sentiment <= 0.45) emoji = "🤬"; 
+                const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d');
+                ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.beginPath(); ctx.arc(128, 128, 100, 0, Math.PI*2); ctx.fill();
+                ctx.font = "160px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(emoji, 128, 138);
                 const texture = new THREE.CanvasTexture(canvas);
                 const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
-
-                const startY = mapPos.y + 1.2;
-                sprite.position.set(mapPos.x, startY, mapPos.z);
-                sprite.scale.set(1.2, 1.2, 1);
-                sprite.userData = { yPos: startY, offset: Math.random() * Math.PI };
+                const startY = mapPos.y + 0.5; 
+                sprite.position.set(mapPos.x, startY, mapPos.z + 0.6); sprite.scale.set(1.0, 1.0, 1); sprite.userData = { yPos: startY, offset: Math.random() * Math.PI };
                 sentimentGroup.add(sprite);
             });
         }
         createSentimentEmojis(scene, regionMap);
 
-        // 4. RETENTION ORBITALS (NEW)
+        // 4. RETENTION
         function createRetentionOrbitals(scene, regionMap) {
             scene.add(retentionGroup);
-
-            // Shared Geometries & Materials for efficiency
-            const geo = new THREE.OctahedronGeometry(0.12); // Diamond shape
+            const geo = new THREE.OctahedronGeometry(0.12);
             const matGold = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2, emissive: 0x443300 });
             const matSilver = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.8, roughness: 0.2, emissive: 0x222222 });
             const matBronze = new THREE.MeshStandardMaterial({ color: 0xcd7f32, metalness: 0.6, roughness: 0.4, emissive: 0x221100 });
-
             data.forEach(region => {
                 const mapPos = regionMap[region.region];
                 const barSize = bars.find(b => b.userData.region.region === region.region).userData.size;
                 const rate = region.retention;
-
-                let count = 1; 
-                let mat = matBronze;
-                
-                if (rate > 0.8) { count = 3; mat = matGold; }
-                else if (rate > 0.5) { count = 2; mat = matSilver; }
-
-                // Radius of orbit
+                let count = 1; let mat = matBronze;
+                if (rate > 0.06) { count = 3; mat = matGold; } else if (rate > 0.045) { count = 2; mat = matSilver; } 
                 const radius = (barSize / 2) + 0.35;
-
                 for(let i=0; i<count; i++) {
                     const gem = new THREE.Mesh(geo, mat);
                     gem.position.set(mapPos.x + radius, mapPos.y / 2, mapPos.z);
-                    
-                    // Orbit metadata
-                    gem.userData = { 
-                        center: {x: mapPos.x, z: mapPos.z},
-                        radius: radius,
-                        angle: (i / count) * Math.PI * 2,
-                        speed: 0.02 + (rate * 0.03), // Higher retention = faster spin
-                        y: (mapPos.y / 2) + (i * 0.1) // Stagger height slightly
-                    };
+                    gem.userData = { center: {x: mapPos.x, z: mapPos.z}, radius: radius, angle: (i / count) * Math.PI * 2, speed: 0.02 + (rate * 0.5), y: (mapPos.y / 2) + (i * 0.1) };
                     retentionGroup.add(gem);
                 }
             });
         }
         createRetentionOrbitals(scene, regionMap);
 
+        // --- MATH HELPERS ---
+        function deg2rad(deg) { return deg * (Math.PI / 180); }
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // --- K-MEANS OPTIMIZATION LOGIC ---
+        function updateOptimizationVisuals(targetPoint) {
+            while(optimizationGroup.children.length > 0){ 
+                const child = optimizationGroup.children[0];
+                if(child.geometry) child.geometry.dispose();
+                if(child.material) child.material.dispose();
+                optimizationGroup.remove(child);
+            }
+            optimizationParticles = [];
+
+            const distances = [];
+            Object.keys(regionMap).forEach(key => {
+                const rPos = regionMap[key];
+                const dist = Math.sqrt( Math.pow(targetPoint.x - rPos.x, 2) + Math.pow(targetPoint.z - rPos.z, 2) );
+                distances.push({ region: key, dist: dist, pos: rPos, weight: data.find(d => d.region === key).total_orders });
+            });
+            distances.sort((a, b) => a.dist - b.dist);
+            const cluster = distances.slice(0, 5); 
+
+            let sumX = 0, sumZ = 0, totalWeight = 0;
+            cluster.forEach(node => {
+                sumX += node.pos.x * node.weight;
+                sumZ += node.pos.z * node.weight;
+                totalWeight += node.weight;
+            });
+            const optimalX = sumX / totalWeight;
+            const optimalZ = sumZ / totalWeight;
+            const optimalPoint = new THREE.Vector3(optimalX, 0.6, optimalZ);
+
+            const clickGeo = new THREE.SphereGeometry(0.3);
+            const clickMat = new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0.5 });
+            const clickMarker = new THREE.Mesh(clickGeo, clickMat);
+            clickMarker.position.copy(targetPoint);
+            optimizationGroup.add(clickMarker);
+
+            const snapGeo = new THREE.BufferGeometry().setFromPoints([targetPoint, optimalPoint]);
+            const snapMat = new THREE.LineDashedMaterial({ color: 0xffff00, dashSize: 0.5, gapSize: 0.2 });
+            const snapLine = new THREE.Line(snapGeo, snapMat);
+            snapLine.computeLineDistances();
+            optimizationGroup.add(snapLine);
+
+            const whGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+            const whMat = new THREE.MeshPhongMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8, emissive: 0x004400 });
+            const warehouse = new THREE.Mesh(whGeo, whMat);
+            warehouse.position.copy(optimalPoint);
+            optimizationGroup.add(warehouse);
+
+            const spRegion = data.find(r => r.region === 'SP');
+            const getLatLon = (vec3) => {
+                const lon = ((vec3.x - (-11)) / (11 - (-11))) * (lonRange.max - lonRange.min) + lonRange.min;
+                const lat = ((-vec3.z - (-11)) / (11 - (-11))) * (latRange.max - latRange.min) + latRange.min;
+                return { lat, lon };
+            }
+            const newHubCoords = getLatLon(optimalPoint);
+            let totalKmSaved = 0;
+
+            cluster.forEach(node => {
+                const regionData = data.find(d => d.region === node.region);
+                const distFromHQ = getDistanceFromLatLonInKm(spRegion.lat, spRegion.lon, regionData.lat, regionData.lon);
+                const distFromNewHub = getDistanceFromLatLonInKm(newHubCoords.lat, newHubCoords.lon, regionData.lat, regionData.lon);
+                let delta = distFromHQ - distFromNewHub;
+                if (delta > 0) totalKmSaved += delta;
+                
+                const p1 = new THREE.Vector3(optimalPoint.x, 0.6, optimalPoint.z);
+                const p2 = new THREE.Vector3(node.pos.x, node.pos.y, node.pos.z);
+                const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+                mid.y += 4; 
+                const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+                const points = curve.getPoints(40);
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+                const lineMat = new THREE.LineBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.3 });
+                optimizationGroup.add(new THREE.Line(lineGeo, lineMat));
+
+                const flowCount = 10;
+                const flowGeo = new THREE.BufferGeometry();
+                const flowPos = new Float32Array(flowCount * 3);
+                const flowOffsets = [];
+                for(let i=0; i<flowCount; i++) { flowOffsets.push(Math.random()); flowPos[i*3]=0; flowPos[i*3+1]=0; flowPos[i*3+2]=0; }
+                flowGeo.setAttribute('position', new THREE.BufferAttribute(flowPos, 3));
+                const flowSys = new THREE.Points(flowGeo, new THREE.PointsMaterial({ color: 0xccffcc, size: 0.15 }));
+                flowSys.userData = { curve: curve, offsets: flowOffsets, speed: 0.01 };
+                optimizationGroup.add(flowSys);
+                optimizationParticles.push(flowSys);
+            });
+
+            const avgDaysSaved = ((totalKmSaved / cluster.length) / 800).toFixed(1);
+
+            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0, 100, 0, 0.9)'; 
+            if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(10, 10, 492, 108, 20); ctx.fill(); } else { ctx.fillRect(10,10,492,108); }
+            ctx.font = 'Bold 40px Arial'; ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(`AI CENTER: ${cluster[0].region} Cluster`, 256, 45); 
+            ctx.font = '30px Arial';
+            ctx.fillText(`🎯 Optimization Correction | -${avgDaysSaved} Days`, 256, 90);
+            
+            const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+            label.position.copy(optimalPoint); label.position.y += 3; label.scale.set(4, 1, 1);
+            optimizationGroup.add(label);
+        }
+
         // --- BUTTON HANDLERS ---
-        
         let isCausalMode = false;
-        document.getElementById('causal-button').addEventListener('click', (e) => {
-            isCausalMode = !isCausalMode;
-            causalGroup.visible = isCausalMode;
-            e.target.classList.toggle('active');
-            const info = document.getElementById('causal-info');
-            info.style.display = isCausalMode ? 'block' : 'none';
-        });
+        document.getElementById('causal-button').addEventListener('click', (e) => { isCausalMode = !isCausalMode; causalGroup.visible = isCausalMode; e.target.classList.toggle('active'); });
 
         let isCorrelationMode = false;
-        document.getElementById('correlation-button').addEventListener('click', (e) => {
-            isCorrelationMode = !isCorrelationMode;
-            correlationGroup.visible = isCorrelationMode;
-            e.target.classList.toggle('active');
-        });
+        document.getElementById('correlation-button').addEventListener('click', (e) => { isCorrelationMode = !isCorrelationMode; correlationGroup.visible = isCorrelationMode; e.target.classList.toggle('active'); });
 
         let isSentimentMode = false;
-        document.getElementById('sentiment-button').addEventListener('click', (e) => {
-            isSentimentMode = !isSentimentMode;
-            sentimentGroup.visible = isSentimentMode;
-            e.target.classList.toggle('active');
-        });
+        document.getElementById('sentiment-button').addEventListener('click', (e) => { isSentimentMode = !isSentimentMode; sentimentGroup.visible = isSentimentMode; e.target.classList.toggle('active'); });
 
         let isRetentionMode = false;
-        document.getElementById('retention-button').addEventListener('click', (e) => {
-            isRetentionMode = !isRetentionMode;
-            retentionGroup.visible = isRetentionMode;
+        document.getElementById('retention-button').addEventListener('click', (e) => { isRetentionMode = !isRetentionMode; retentionGroup.visible = isRetentionMode; e.target.classList.toggle('active'); });
+
+        let isOptimizationMode = false;
+        document.getElementById('optimize-button').addEventListener('click', (e) => {
+            isOptimizationMode = !isOptimizationMode;
+            optimizationGroup.visible = isOptimizationMode;
             e.target.classList.toggle('active');
+            if(isOptimizationMode) {
+                e.target.style.background = "#0088ff"; e.target.style.borderColor = "#00ffff"; e.target.style.boxShadow = "0 0 15px rgba(0, 136, 255, 0.6)";
+            } else {
+                e.target.style.background = "#333"; e.target.style.borderColor = "#555"; e.target.style.boxShadow = "none";
+                while(optimizationGroup.children.length > 0){ optimizationGroup.remove(optimizationGroup.children[0]); }
+                optimizationParticles = [];
+            }
         });
 
-        // Mouse controls
+        // --- CONSOLIDATED MOUSE CONTROLS ---
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
         let cameraRotation = { x: 0.4, y: 0 };
         const cameraDistance = 18;
+        const mouseRaycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let selectedBar = null;
 
         const updateCamera = () => {
-            camera.position.x = Math.sin(cameraRotation.y) * cameraDistance * Math.cos(cameraRotation.x);
-            camera.position.y = Math.sin(cameraRotation.x) * cameraDistance + 5;
-            camera.position.z = Math.cos(cameraRotation.y) * cameraDistance * Math.cos(cameraRotation.x);
-            camera.lookAt(0, 2, 0);
+            if(!renderer.xr.isPresenting) {
+                camera.position.x = Math.sin(cameraRotation.y) * cameraDistance * Math.cos(cameraRotation.x);
+                camera.position.y = Math.sin(cameraRotation.x) * cameraDistance + 5;
+                camera.position.z = Math.cos(cameraRotation.y) * cameraDistance * Math.cos(cameraRotation.x);
+                camera.lookAt(0, 2, 0);
+            }
         };
+        updateCamera();
 
-        window.addEventListener('mousedown', (e) => { if (e.button === 0) { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; }});
+        window.addEventListener('mousedown', (e) => { 
+            if (e.button === 0) { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; }
+        });
         window.addEventListener('mouseup', () => { isDragging = false; });
+        
         window.addEventListener('mousemove', (e) => {
+            // Camera Rotation
             if (isDragging) {
                 const deltaX = e.clientX - previousMousePosition.x;
                 const deltaY = e.clientY - previousMousePosition.y;
@@ -615,46 +778,96 @@
                 cameraRotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, cameraRotation.x));
                 previousMousePosition = { x: e.clientX, y: e.clientY };
                 updateCamera();
+                return; 
             }
-        });
-
-        updateCamera();
-
-        // Raycaster
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        let selectedBar = null;
-
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) return;
+            // Hover logic
+            if (renderer.xr.isPresenting) return;
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(bars);
-            bars.forEach(bar => { 
-                bar.material.emissiveIntensity = 0.2; bar.scale.set(1, 1, 1); 
-            });
+            mouseRaycaster.setFromCamera(mouse, camera);
+            bars.forEach(bar => { bar.material.emissiveIntensity = 0.2; bar.scale.set(1, 1, 1); });
+            const intersects = mouseRaycaster.intersectObjects(bars);
             if (intersects.length > 0) {
                 const bar = intersects[0].object;
-                bar.material.emissiveIntensity = 0.5;
-                bar.scale.set(1.1, 1, 1.1);
+                bar.material.emissiveIntensity = 0.5; bar.scale.set(1.1, 1, 1.1);
                 selectedBar = bar;
+            } else { selectedBar = null; }
+        });
+
+        // Smart Click Logic
+        window.addEventListener('click', (e) => {
+            if (isDragging || renderer.xr.isPresenting) return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            mouseRaycaster.setFromCamera(mouse, camera);
+
+            if (isOptimizationMode) {
+                const floorIntersects = mouseRaycaster.intersectObject(floor);
+                if (floorIntersects.length > 0) {
+                    const point = floorIntersects[0].point;
+                    updateOptimizationVisuals(point);
+                }
             } else {
-                selectedBar = null;
+                const intersects = mouseRaycaster.intersectObjects(bars);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData.region;
+                    alert(`Region: ${data.region}\nRetention: ${(data.retention*100).toFixed(0)}%\nSentiment: ${data.sentiment}\nAvg Delay: ${data.avg_delay_days.toFixed(2)} days`);
+                }
             }
         });
 
-        window.addEventListener('click', () => {
-            if (selectedBar) {
-                const data = selectedBar.userData.region;
-                alert(`Region: ${data.region}\nRetention: ${(data.retention*100).toFixed(0)}%\nSentiment: ${data.sentiment}\nAvg Delay: ${data.avg_delay_days.toFixed(2)} days`);
-            }
-        });
+        // --- VR ---
+        const controller1 = renderer.xr.getController(0);
+        controller1.addEventListener('selectstart', onSelectStart);
+        scene.add(controller1);
+        const controller2 = renderer.xr.getController(1);
+        controller2.addEventListener('selectstart', onSelectStart);
+        scene.add(controller2);
+        const laserGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -5)]);
+        const laserMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+        const line1 = new THREE.Line(laserGeometry, laserMaterial);
+        line1.scale.z = 5;
+        controller1.add(line1.clone());
+        controller2.add(line1.clone());
+        
+        const vrInfoGroup = new THREE.Group(); scene.add(vrInfoGroup); vrInfoGroup.visible = false;
+        function updateVRInfoPanel(data, position) {
+            while(vrInfoGroup.children.length > 0){ vrInfoGroup.remove(vrInfoGroup.children[0]); }
+            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 256; const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "rgba(0, 0, 0, 0.9)"; ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 5;
+            if(ctx.roundRect) { ctx.beginPath(); ctx.roundRect(10, 10, 492, 236, 20); ctx.fill(); ctx.stroke(); } else { ctx.fillRect(10,10,492,236); ctx.strokeRect(10,10,492,236); }
+            ctx.fillStyle = "white"; ctx.font = "Bold 40px Arial"; ctx.fillText(`Region: ${data.region}`, 40, 60); ctx.font = "30px Arial"; ctx.fillText(`Avg Delay: ${data.avg_delay_days.toFixed(2)} days`, 40, 110);
+            ctx.fillText(`Retention: ${(data.retention*100).toFixed(0)}%`, 40, 150); ctx.fillText(`Sentiment: ${data.sentiment}`, 40, 190);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+            sprite.scale.set(3, 1.5, 1); vrInfoGroup.add(sprite); vrInfoGroup.position.copy(position); vrInfoGroup.position.y += 2; vrInfoGroup.visible = true; vrInfoGroup.lookAt(camera.position); 
+        }
 
-        // VR Button logic
+        const vrRaycaster = new THREE.Raycaster();
+        const tempMatrix = new THREE.Matrix4();
+        let intersectedBar = null;
+        function onSelectStart(event) {
+            if (intersectedBar) {
+                const data = intersectedBar.userData.region;
+                if (renderer.xr.isPresenting) updateVRInfoPanel(data, intersectedBar.position);
+            }
+        }
+        function checkVRIntersections(controller) {
+            tempMatrix.identity().extractRotation(controller.matrixWorld);
+            vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+            vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+            const intersects = vrRaycaster.intersectObjects(bars);
+            if (intersects.length > 0) {
+                if (intersectedBar != intersects[0].object) {
+                    if (intersectedBar) intersectedBar.material.emissiveIntensity = 0.2;
+                    intersectedBar = intersects[0].object; intersectedBar.material.emissiveIntensity = 1.0; 
+                }
+            } else { if (intersectedBar) intersectedBar.material.emissiveIntensity = 0.2; intersectedBar = null; }
+        }
+
         document.getElementById('vr-button').addEventListener('click', async () => {
             if (navigator.xr && await navigator.xr.isSessionSupported('immersive-vr')) {
-                renderer.xr.setSession(await navigator.xr.requestSession('immersive-vr'));
+                const session = await navigator.xr.requestSession('immersive-vr');
+                renderer.xr.setSession(session);
             } else { alert('VR not supported'); }
         });
 
@@ -662,71 +875,37 @@
         let time = 0;
         const animate = () => {
             time += 0.016;
+            if (renderer.xr.isPresenting) { checkVRIntersections(controller1); checkVRIntersections(controller2); }
 
-            // Rings
-            rings.forEach((ring, i) => {
-                const pulse = Math.sin(time * 2 + i) * 0.5 + 0.5;
-                ring.material.opacity = ring.userData.baseOpacity * pulse;
-                ring.scale.set(1 + pulse * 0.2, 1 + pulse * 0.2, 1);
-            });
-
-            // Particles
+            rings.forEach((ring, i) => { const pulse = Math.sin(time * 2 + i) * 0.5 + 0.5; ring.material.opacity = ring.userData.baseOpacity * pulse; ring.scale.set(1 + pulse * 0.2, 1 + pulse * 0.2, 1); });
             particles.forEach(p => {
                 const pos = p.geometry.attributes.position.array;
-                for (let i = 0; i < pos.length; i += 3) {
-                    pos[i + 1] += Math.sin(time + i) * 0.01;
-                    if (pos[i + 1] > p.userData.baseY + 3) pos[i + 1] = p.userData.baseY;
-                }
+                for (let i = 0; i < pos.length; i += 3) { pos[i + 1] += Math.sin(time + i) * 0.01; if (pos[i + 1] > p.userData.baseY + 3) pos[i + 1] = p.userData.baseY; }
                 p.geometry.attributes.position.needsUpdate = true;
             });
-
-            // Causal Flow
             if (causalGroup.visible) {
+                causalGroup.children.forEach(obj => { if (obj.isSprite && obj.userData.offset) { obj.position.y = obj.userData.baseY + Math.sin(time * 3 + obj.userData.offset) * 0.05; } });
                 flowParticles.forEach(p => {
-                    const positions = p.geometry.attributes.position.array;
-                    const curve = p.userData.curve;
-                    const offsets = p.userData.offsets;
-                    const speed = p.userData.speed;
-                    for(let i = 0; i < offsets.length; i++) {
-                        offsets[i] += speed;
-                        if(offsets[i] > 1) offsets[i] = 0;
-                        const point = curve.getPoint(offsets[i]);
-                        positions[i*3] = point.x;
-                        positions[i*3+1] = point.y;
-                        positions[i*3+2] = point.z;
-                    }
+                    const positions = p.geometry.attributes.position.array; const curve = p.userData.curve; const offsets = p.userData.offsets; const speed = p.userData.speed;
+                    for(let i = 0; i < offsets.length; i++) { offsets[i] += speed; if(offsets[i] > 1) offsets[i] = 0; const point = curve.getPoint(offsets[i]); positions[i*3] = point.x; positions[i*3+1] = point.y; positions[i*3+2] = point.z; }
                     p.geometry.attributes.position.needsUpdate = true;
                 });
             }
-
-            // Sentiment Emojis
-            if (sentimentGroup.visible) {
-                sentimentGroup.children.forEach((sprite) => {
-                    sprite.position.y = sprite.userData.yPos + Math.sin(time * 3 + sprite.userData.offset) * 0.1;
+            if (sentimentGroup.visible) { sentimentGroup.children.forEach((sprite) => { sprite.position.y = sprite.userData.yPos + Math.sin(time * 3 + sprite.userData.offset) * 0.1; }); }
+            if (retentionGroup.visible) { retentionGroup.children.forEach(gem => { const ud = gem.userData; ud.angle += ud.speed; gem.position.x = ud.center.x + Math.cos(ud.angle) * ud.radius; gem.position.z = ud.center.z + Math.sin(ud.angle) * ud.radius; gem.rotation.y += 0.05; }); }
+            
+            if (optimizationGroup.visible) {
+                optimizationParticles.forEach(p => {
+                    const positions = p.geometry.attributes.position.array; const curve = p.userData.curve; const offsets = p.userData.offsets; const speed = p.userData.speed;
+                    for(let i = 0; i < offsets.length; i++) { offsets[i] += speed; if(offsets[i] > 1) offsets[i] = 0; const point = curve.getPoint(offsets[i]); positions[i*3] = point.x; positions[i*3+1] = point.y; positions[i*3+2] = point.z; }
+                    p.geometry.attributes.position.needsUpdate = true;
                 });
             }
-
-            // Retention Orbitals (Spinning)
-            if (retentionGroup.visible) {
-                retentionGroup.children.forEach(gem => {
-                    const ud = gem.userData;
-                    ud.angle += ud.speed;
-                    gem.position.x = ud.center.x + Math.cos(ud.angle) * ud.radius;
-                    gem.position.z = ud.center.z + Math.sin(ud.angle) * ud.radius;
-                    gem.rotation.y += 0.05; // Spin the gem itself
-                });
-            }
-
             renderer.render(scene, camera);
         };
 
         renderer.setAnimationLoop(animate);
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
